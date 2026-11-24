@@ -17,9 +17,33 @@ class _CarInventoryScreenState extends State<CarInventoryScreen> {
   ];
 
   String query = '';
-  double? minP;
-  double? maxP;
-  int tempCount = 0;
+  double? minPrice;
+  double? maxPrice;
+  late List> filteredCars;
+
+  @override
+  void initState() {
+    super.initState();
+    filteredCars = List.from(cars);
+  }
+
+  void _applyFilters() {
+    final currentMin = minPrice;
+    final currentMax = maxPrice;
+
+    setState(() {
+      filteredCars = cars.where((car) {
+        final matchesName = car['name']
+            .toString()
+            .toLowerCase()
+            .contains(query.toLowerCase());
+        final double price = (car['price'] as num?)?.toDouble() ?? 0.0;
+        final matchesMin = currentMin == null || price >= currentMin;
+        final matchesMax = currentMax == null || price <= currentMax;
+        return matchesName && matchesMin && matchesMax;
+      }).toList();
+    });
+  }
 
   @override
   void dispose() {
@@ -29,17 +53,8 @@ class _CarInventoryScreenState extends State<CarInventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = cars.where((c) {
-      final matchesName =
-          c['name'].toString().toLowerCase().contains(query.toLowerCase());
-      final double price = c['price'];
-      final matchesMin = minP == null || price >= minP!;
-      final matchesMax = maxP == null || price <= maxP!;
-      return matchesName && matchesMin && matchesMax;
-    }).toList();
-
     return Scaffold(
-      appBar: AppBar(title: Text('Car Inventory (${filtered.length})')),
+      appBar: AppBar(title: Text('Car Inventory (${filteredCars.length})')),
       body: Column(
         children: [
           Padding(
@@ -49,44 +64,51 @@ class _CarInventoryScreenState extends State<CarInventoryScreen> {
               decoration: InputDecoration(
                 labelText: 'Search cars',
                 suffixIcon: IconButton(
-                  icon: Icon(Icons.clear),
+                  icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
-                    setState(() {
-                      query = '';
-                      minP = null;
-                      maxP = null;
-                    });
+                    query = '';
+                    minPrice = null;
+                    maxPrice = null;
+                    _applyFilters();
                   },
                 ),
               ),
-              onChanged: (val) => setState(() => query = val),
+              onChanged: (val) {
+                query = val;
+                _applyFilters();
+              },
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               ElevatedButton(
-                onPressed: () => setState(() => maxP = 90000.0),
-                child: Text('Under RM90k'),
+                onPressed: () {
+                  maxPrice = 90000.0;
+                  _applyFilters();
+                },
+                child: const Text('Under RM90k'),
               ),
               ElevatedButton(
-                onPressed: () => setState(() {
-                  minP = null;
-                  maxP = null;
-                }),
-                child: Text('All Prices'),
+                onPressed: () {
+                  minPrice = null;
+                  maxPrice = null;
+                  _applyFilters();
+                },
+                child: const Text('All Prices'),
               ),
             ],
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: filtered.length,
+              itemCount: filteredCars.length,
               itemBuilder: (context, index) {
-                final item = filtered[index];
+                final item = filteredCars[index];
+                final price = (item['price'] as num?)?.toDouble() ?? 0.0;
                 return ListTile(
-                  title: Text(item['name']),
-                  subtitle: Text('RM ${item['price'].toStringAsFixed(0)}'),
+                  title: Text(item['name'].toString()),
+                  subtitle: Text('RM ${price.toStringAsFixed(0)}'),
                 );
               },
             ),
