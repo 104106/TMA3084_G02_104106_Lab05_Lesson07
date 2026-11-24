@@ -12,7 +12,7 @@ class Screen1 extends StatelessWidget {
           Icon(Icons.home, size: 80, color: Colors.blue),
           SizedBox(height: 16),
           Text(
-            'Home Screen',
+            'Home Tab',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ],
